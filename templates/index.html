@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Radar</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📡</text></svg>">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation / Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>BigQuery <span>Release Radar</span></h1>
+                    <p class="subtitle">Real-time update streams & tweet composer</p>
+                </div>
+            </div>
+            <div class="actions-area">
+                <span id="cache-indicator" class="cache-badge hidden">Cached</span>
+                <span id="last-updated-text" class="last-updated">Updating...</span>
+                <button id="refresh-btn" class="btn btn-primary btn-icon" title="Refresh Release Notes">
+                    <svg id="refresh-spinner" class="spinner" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.306 8H18" />
+                    </svg>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <section class="stats-bar">
+            <div class="stat-card" data-filter="all">
+                <span class="stat-value" id="stat-total">0</span>
+                <span class="stat-label">Total Notes</span>
+            </div>
+            <div class="stat-card" data-type="Feature">
+                <span class="stat-value text-feature" id="stat-features">0</span>
+                <span class="stat-label">Features</span>
+            </div>
+            <div class="stat-card" data-type="Announcement">
+                <span class="stat-value text-announcement" id="stat-announcements">0</span>
+                <span class="stat-label">Announcements</span>
+            </div>
+            <div class="stat-card" data-type="Breaking">
+                <span class="stat-value text-breaking" id="stat-breaking">0</span>
+                <span class="stat-label">Breaking</span>
+            </div>
+            <div class="stat-card" data-type="Issue">
+                <span class="stat-value text-issue" id="stat-issues">0</span>
+                <span class="stat-label">Issues/Fixes</span>
+            </div>
+        </section>
+
+        <!-- Main Body -->
+        <main class="app-main">
+            <!-- Left Side: Controls & Feed -->
+            <div class="feed-section">
+                <!-- Search & Filters -->
+                <div class="controls-panel">
+                    <div class="search-box">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input type="text" id="search-input" placeholder="Search keywords (e.g. Gemini, CDC, UDFs)...">
+                        <button id="clear-search" class="clear-btn hidden">&times;</button>
+                    </div>
+                    <div class="filter-pills" id="filter-pills-container">
+                        <button class="pill active" data-filter="all">All Updates</button>
+                        <button class="pill" data-filter="Feature">Features</button>
+                        <button class="pill" data-filter="Announcement">Announcements</button>
+                        <button class="pill" data-filter="Change">Changes</button>
+                        <button class="pill" data-filter="Issue">Issues & Fixes</button>
+                        <button class="pill" data-filter="Breaking">Breaking</button>
+                    </div>
+                </div>
+
+                <!-- Release Cards List -->
+                <div class="release-list-container">
+                    <div id="loading-state" class="state-container">
+                        <div class="radar-pulse"></div>
+                        <p>Scanning BigQuery feed...</p>
+                    </div>
+                    
+                    <div id="error-state" class="state-container hidden">
+                        <div class="error-icon">⚠️</div>
+                        <p id="error-message">Unable to load feed. Please try again.</p>
+                        <button id="retry-btn" class="btn btn-secondary">Retry Scan</button>
+                    </div>
+
+                    <div id="empty-state" class="state-container hidden">
+                        <div class="empty-icon">🔍</div>
+                        <p>No release notes match your search or filter.</p>
+                        <button id="reset-filters-btn" class="btn btn-secondary">Clear Filters</button>
+                    </div>
+
+                    <div id="release-cards" class="release-cards-grid">
+                        <!-- Cards injected by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Tweet Composer (Sticky) -->
+            <aside class="composer-sidebar">
+                <div class="composer-card">
+                    <div class="composer-header">
+                        <div class="title-with-icon">
+                            <!-- X Logo SVG -->
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="x-logo">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                            </svg>
+                            <h3>Tweet Composer</h3>
+                        </div>
+                        <button id="clear-composer" class="btn-text" title="Clear selection">Clear</button>
+                    </div>
+
+                    <!-- Selected updates stack -->
+                    <div class="selected-stack-container">
+                        <label>Selected Release Updates</label>
+                        <div id="selected-list" class="selected-list">
+                            <div class="no-selection-hint">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                                </svg>
+                                <span>Click on any update card to select it and start writing your tweet.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Editor -->
+                    <div class="tweet-editor-container">
+                        <label for="tweet-textarea">Compose Your Tweet</label>
+                        <div class="textarea-wrapper">
+                            <textarea id="tweet-textarea" placeholder="Select a release note or start typing here..." maxlength="500"></textarea>
+                        </div>
+                        <div class="editor-footer">
+                            <div class="char-counter">
+                                <span id="char-count">0</span>/280
+                                <span id="char-warning" class="warning-text hidden">Limit exceeded for regular X post</span>
+                            </div>
+                            <div class="format-options">
+                                <button id="format-short-btn" class="btn-small" title="Shorten content to fit tweet">Auto-fit</button>
+                                <button id="add-hashtags-btn" class="btn-small" title="Append #BigQuery tags">Add Tags</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Prompt Helper for Tweet Styling -->
+                    <div class="tweet-presets">
+                        <label>Tweet Vibe</label>
+                        <div class="preset-buttons">
+                            <button class="preset-btn active" data-preset="news">🚀 News</button>
+                            <button class="preset-btn" data-preset="dev">💻 Technical</button>
+                            <button class="preset-btn" data-preset="hype">🔥 Hyped</button>
+                        </div>
+                    </div>
+
+                    <!-- Tweet button -->
+                    <button id="tweet-btn" class="btn btn-tweet btn-full">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        <span>Share on X</span>
+                    </button>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
