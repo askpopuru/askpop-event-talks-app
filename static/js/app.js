@@ -210,6 +210,9 @@ function renderReleaseCards() {
                     </svg>
                 </a>
                 <div class="card-actions">
+                    <button class="btn-small copy-btn" onclick="event.stopPropagation(); copyTweetToClipboard('${note.id}');" title="Copy formatted tweet to clipboard">
+                        Copy
+                    </button>
                     <button class="btn-small quick-tweet-btn" onclick="event.stopPropagation(); quickTweet('${note.id}');">
                         Quick Tweet
                     </button>
@@ -476,8 +479,125 @@ function quickTweet(noteId) {
     showToast('Redirecting quick tweet to X...');
 }
 
+// Copy single tweet text to clipboard
+function copyTweetToClipboard(noteId) {
+    const note = releaseNotes.find(n => n.id === noteId);
+    if (!note) return;
+    
+    const dateStr = note.date;
+    const typeStr = note.type;
+    let summary = note.text_summary;
+    const link = note.link;
+    
+    let tweetText = `🚀 New BigQuery ${typeStr} (${dateStr}):\n\n${summary}\n\nDocs: ${link}${TWEET_TAGS}`;
+    
+    // Auto-fit check
+    if (tweetText.length > CHAR_LIMIT) {
+        const prefix = `🚀 BigQuery ${typeStr} (${dateStr}):\n\n`;
+        const suffix = `\n\nDocs: ${link}${TWEET_TAGS}`;
+        const allowedLength = CHAR_LIMIT - prefix.length - suffix.length - 4;
+        
+        if (allowedLength > 10) {
+            summary = summary.substring(0, allowedLength) + '...';
+            tweetText = `${prefix}${summary}${suffix}`;
+        } else {
+            tweetText = `BigQuery ${typeStr} (${dateStr})\n\n🔗 ${link}${TWEET_TAGS}`;
+        }
+    }
+    
+    navigator.clipboard.writeText(tweetText)
+        .then(() => {
+            showToast('Tweet copied to clipboard!');
+        })
+        .catch(err => {
+            console.error('Could not copy text: ', err);
+            showToast('Failed to copy to clipboard', 'error');
+        });
+}
+
+// Export filtered notes to CSV file
+function exportFilteredToCSV() {
+    if (filteredNotes.length === 0) {
+        showToast('No notes to export', 'error');
+        return;
+    }
+    
+    // Header
+    let csvContent = '"Date","Category","Documentation URL","Plain Text Summary"\r\n';
+    
+    filteredNotes.forEach(note => {
+        // Escape quotes by doubling them
+        const escapedDate = note.date.replace(/"/g, '""');
+        const escapedType = note.type.replace(/"/g, '""');
+        const escapedLink = note.link.replace(/"/g, '""');
+        const escapedSummary = note.text_summary.replace(/"/g, '""');
+        
+        csvContent += `"${escapedDate}","${escapedType}","${escapedLink}","${escapedSummary}"\r\n`;
+    });
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `bigquery_releases_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast(`Exported ${filteredNotes.length} updates to CSV!`);
+}
+
+// Theme (Dark / Light Mode) Controller
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    const sunIcon = document.getElementById('theme-sun');
+    const moonIcon = document.getElementById('theme-moon');
+    
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-mode');
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+    } else {
+        document.body.classList.remove('light-mode');
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+    }
+}
+
+function toggleTheme() {
+    const isLightNow = document.body.classList.toggle('light-mode');
+    const sunIcon = document.getElementById('theme-sun');
+    const moonIcon = document.getElementById('theme-moon');
+    
+    if (isLightNow) {
+        localStorage.setItem('theme', 'light');
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+        showToast('Swapped to Light Mode!', 'info');
+    } else {
+        localStorage.setItem('theme', 'dark');
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+        showToast('Swapped to Dark Mode!', 'info');
+    }
+}
+
 // Setup Event Listeners
 function setupEventListeners() {
+    // Theme toggle click
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
+    }
+    
+    // Export CSV click
+    const exportCsvBtn = document.getElementById('export-csv-btn');
+    if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', exportFilteredToCSV);
+    }
+
     // Refresh button click
     refreshBtn.addEventListener('click', () => fetchReleases(true));
     
@@ -556,6 +676,7 @@ function setupEventListeners() {
 
 // Initialise App
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     setupEventListeners();
     fetchReleases(); // Load on start (will hit cache or fetch live)
 });

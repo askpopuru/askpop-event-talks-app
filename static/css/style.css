@@ -56,6 +56,109 @@
     --max-content-width: 1400px;
 }
 
+/* Light Mode Overrides */
+body.light-mode {
+    --bg-darker: #f1f5f9; /* Slate-100 */
+    --bg-dark: #ffffff; /* White */
+    --bg-card: rgba(255, 255, 255, 0.75);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --border-color: rgba(15, 23, 42, 0.08);
+    --border-hover: rgba(15, 23, 42, 0.16);
+    
+    --text-primary: #0f172a; /* Slate-900 */
+    --text-secondary: #475569; /* Slate-600 */
+    --text-muted: #64748b; /* Slate-500 */
+    
+    --primary: #1d4ed8; /* Darker primary for contrast */
+    --primary-hover: #1e40af;
+    --primary-glow: rgba(29, 78, 216, 0.08);
+    
+    --accent: #0891b2;
+    --accent-glow: rgba(8, 145, 178, 0.08);
+
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.04) 0px, transparent 50%);
+}
+
+/* Specific Light Mode Adjustments */
+body.light-mode .search-box {
+    background: rgba(255, 255, 255, 0.85);
+}
+
+body.light-mode .selected-list,
+body.light-mode .textarea-wrapper {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+body.light-mode .btn-tweet {
+    background-color: #0f172a;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+body.light-mode .btn-tweet:hover {
+    background-color: #1e293b;
+}
+
+body.light-mode .composer-card,
+body.light-mode .app-header {
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+body.light-mode .btn-secondary {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+body.light-mode .btn-secondary:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+    border-color: var(--border-hover);
+}
+
+body.light-mode .preset-btn {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+body.light-mode .preset-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .preset-btn.active {
+    background: rgba(29, 78, 216, 0.08);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-icon-only {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-icon-only:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-hover);
+}
+
+body.light-mode .btn-icon-only {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+body.light-mode .btn-icon-only:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
